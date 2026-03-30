@@ -10,9 +10,9 @@ const AdminLogin = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // 简单的管理员账号密码验证
-    // 默认账号：admin，密码：admin123
-    if (username === 'admin' && password === 'admin123') {
+    // 管理员账号密码验证
+    // 账号：puxuzhen，密码：TSG200554tsg
+    if (username === 'puxuzhen' && password === 'TSG200554tsg') {
       // 保存登录状态到本地存储
       localStorage.setItem('adminLoggedIn', 'true');
       // 跳转到管理后台
@@ -55,7 +55,6 @@ const AdminLogin = () => {
           </button>
         </form>
         <div className="login-footer">
-          <p>默认账号：admin，密码：admin123</p>
           <p><Link to="/">返回首页</Link></p>
         </div>
       </div>

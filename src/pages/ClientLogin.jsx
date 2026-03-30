@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const DesignerLogin = () => {
+const ClientLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -42,30 +42,28 @@ const DesignerLogin = () => {
       return;
     }
     
-    // 从本地存储读取设计师数据
-    const designers = JSON.parse(localStorage.getItem('designers') || '[]');
-    
-    // 查找匹配的设计师
-    const designer = designers.find(d => d.username === username && d.password === password);
-    
-    if (designer) {
-      if (designer.status === '已通过') {
-        // 保存登录状态到本地存储
-        localStorage.setItem('loggedInDesigner', JSON.stringify(designer));
-        // 跳转到接单大厅
-        navigate('/designer-hall');
-      } else {
-        setError('您的入驻申请尚未通过审核，请等待管理员审核');
-      }
+    // 客户账号密码验证
+    // 这里可以根据实际需求修改验证逻辑
+    // 暂时使用简单的验证，实际项目中应该从后端验证
+    if (username && password) {
+      // 保存登录状态到本地存储
+      localStorage.setItem('clientLoggedIn', 'true');
+      localStorage.setItem('clientUsername', username);
+      // 设置登录过期时间（24小时）
+      const expirationTime = new Date();
+      expirationTime.setHours(expirationTime.getHours() + 24);
+      localStorage.setItem('clientLoginExpiry', expirationTime.toISOString());
+      // 跳转到客户订单管理页面
+      navigate('/client-dashboard');
     } else {
-      setError('账号或密码错误');
+      setError('请输入账号和密码');
     }
   };
 
   return (
-    <div className="designer-login">
+    <div className="client-login">
       <div className="login-container">
-        <h2>设计师登录</h2>
+        <h2>客户登录</h2>
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="username">账号</label>
@@ -131,12 +129,12 @@ const DesignerLogin = () => {
           </button>
         </form>
         <div className="login-footer">
-          <p>还没有账号？ <Link to="/designer-register">立即注册</Link></p>
-          <p><Link to="/">返回首页</Link></p>
+          <p>请输入您的客户账号和密码</p>
+          <p><Link to="/" className="back-home-btn">返回首页</Link></p>
         </div>
       </div>
     </div>
   );
 };
 
-export default DesignerLogin;
+export default ClientLogin;

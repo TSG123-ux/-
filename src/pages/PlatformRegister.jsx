@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const PlatformRegister = () => {
@@ -13,6 +13,19 @@ const PlatformRegister = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [captcha, setCaptcha] = useState('');
+  const [userCaptcha, setUserCaptcha] = useState('');
+
+  // 生成随机验证码
+  const generateCaptcha = () => {
+    const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+    setCaptcha(randomCode);
+  };
+
+  // 组件加载时生成验证码
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +61,13 @@ const PlatformRegister = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // 验证验证码
+    if (userCaptcha !== captcha) {
+      setError('验证码错误，请重新输入');
+      generateCaptcha(); // 重新生成验证码
+      return;
+    }
     
     // 检查平台名称是否已存在
     const existingPlatforms = JSON.parse(localStorage.getItem('platforms') || '[]');
@@ -200,10 +220,49 @@ const PlatformRegister = () => {
           )}
         </div>
         
+        <div className="form-group">
+          <label>验证码</label>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input
+              type="text"
+              value={userCaptcha}
+              onChange={(e) => setUserCaptcha(e.target.value)}
+              required
+              className="form-control"
+              style={{ flex: 1 }}
+              placeholder="请输入验证码"
+            />
+            <div 
+              style={{ 
+                background: '#f0f0f0', 
+                padding: '10px', 
+                borderRadius: '4px', 
+                fontSize: '18px', 
+                fontWeight: 'bold', 
+                letterSpacing: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '100px',
+                cursor: 'pointer'
+              }}
+              onClick={generateCaptcha}
+            >
+              {captcha}
+            </div>
+          </div>
+          <small style={{ display: 'block', marginTop: '5px', fontSize: '12px', color: '#666' }}>
+            点击验证码可刷新
+          </small>
+        </div>
+        
         {error && <div className="error-message">{error}</div>}
         <button type="submit" className="btn submit-btn">
           提交申请
         </button>
+        <Link to="/" className="btn back-btn" style={{ marginTop: '15px', display: 'block', textAlign: 'center' }}>
+          返回首页
+        </Link>
       </form>
     </div>
   );

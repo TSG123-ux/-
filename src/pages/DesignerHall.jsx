@@ -49,9 +49,17 @@ const DesignerHall = () => {
         setRequests(updatedRequests);
         setMessage('接单成功');
 
-        // 更新本地存储中的需求状态为已接单
+        // 获取当前登录的设计师信息
+        const loggedInDesigner = JSON.parse(localStorage.getItem('loggedInDesigner'));
+
+        // 更新本地存储中的需求状态为已接单，并添加设计师信息
         const updatedStorageRequests = parsedRequests.map(req => 
-          req.id === id ? { ...req, status: '已接单' } : req
+          req.id === id ? { 
+            ...req, 
+            status: '已接单',
+            designerId: loggedInDesigner.id,
+            designerName: loggedInDesigner.name
+          } : req
         );
         localStorage.setItem('requests', JSON.stringify(updatedStorageRequests));
       } else {

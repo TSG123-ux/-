@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Admin = () => {
+  const navigate = useNavigate();
+
+  // 检查登录状态
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('adminLoggedIn');
+    if (!isLoggedIn) {
+      // 如果没有登录，重定向到登录页面
+      navigate('/admin-login');
+    }
+  }, [navigate]);
 
   // 从本地存储读取设计师数据
   const [designers, setDesigners] = useState(() => {
@@ -35,14 +45,22 @@ const Admin = () => {
     return [];
   });
 
-  // 模拟合作店铺数据
-  const [shops, setShops] = useState([
-    { id: 1, name: '创意设计工作室' },
-    { id: 2, name: '科技有限公司' },
-    { id: 3, name: '品牌营销公司' }
-  ]);
+  // 从本地存储读取合作店铺数据
+  const [shops, setShops] = useState(() => {
+    const savedShops = localStorage.getItem('shops');
+    if (savedShops) {
+      return JSON.parse(savedShops);
+    }
+    // 初始为空数组
+    return [];
+  });
 
   const [newShop, setNewShop] = useState('');
+
+  // 订单对接管理相关状态
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // 审核设计师
   const handleReview = (id, status) => {
@@ -92,15 +110,45 @@ const Admin = () => {
     e.preventDefault();
     if (newShop) {
       const newId = shops.length + 1;
-      setShops(prev => [...prev, { id: newId, name: newShop }]);
+      const updatedShops = [...shops, { id: newId, name: newShop }];
+      setShops(updatedShops);
+      // 保存到本地存储
+      localStorage.setItem('shops', JSON.stringify(updatedShops));
       setNewShop('');
     }
   };
 
   // 删除合作店铺
   const handleDeleteShop = (id) => {
-    setShops(prev => prev.filter(shop => shop.id !== id));
+    const updatedShops = shops.filter(shop => shop.id !== id);
+    setShops(updatedShops);
+    // 保存到本地存储
+    localStorage.setItem('shops', JSON.stringify(updatedShops));
   };
+
+  // 计算每个设计师的订单数量
+  const getDesignerOrderCount = (designerId) => {
+    return requests.filter(req => req.designerId === designerId).length;
+  };
+
+  // 过滤和分页
+  const filteredRequests = requests.filter(req => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      req.type.toLowerCase().includes(searchLower) ||
+      (req.designerName && req.designerName.toLowerCase().includes(searchLower)) ||
+      (req.orderNumber && req.orderNumber.toLowerCase().includes(searchLower))
+    );
+  });
+
+  // 计算分页
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentRequests = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+
+  // 改变页码
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="admin">
@@ -113,9 +161,11 @@ const Admin = () => {
             <thead>
               <tr>
                 <th>ID</th>
+                <th>工号</th>
                 <th>姓名</th>
                 <th>技能</th>
                 <th>状态</th>
+                <th>订单数量</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -123,9 +173,11 @@ const Admin = () => {
               {designers.map(designer => (
                 <tr key={designer.id}>
                   <td>{designer.id}</td>
+                  <td>{designer.employeeId || '未生成'}</td>
                   <td>{designer.name}</td>
                   <td>{designer.skills.join(', ')}</td>
                   <td>{designer.status}</td>
+                  <td>{getDesignerOrderCount(designer.id)}</td>
                   <td>
                     {designer.status === '待审核' && (
                       <>
@@ -192,6 +244,59 @@ const Admin = () => {
             </tbody>
           </table>
         </div>
+      </div>
+      
+      <div className="admin-section">
+        <h3>订单对接管理</h3>
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="搜索订单类型、设计师或订单号"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="form-control search-input"
+          />
+        </div>
+        <div className="admin-table">
+          <table>
+            <thead>
+              <tr>
+                <th>订单号</th>
+                <th>需求类型</th>
+                <th>预算</th>
+                <th>状态</th>
+                <th>设计师</th>
+                <th>创建时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentRequests.map(req => (
+                <tr key={req.id}>
+                  <td>{req.orderNumber || '未生成'}</td>
+                  <td>{req.type}</td>
+                  <td>¥{req.budget}</td>
+                  <td>{req.status}</td>
+                  <td>{req.designerName || '未分配'}</td>
+                  <td>{new Date(req.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* 分页 */}
+        {totalPages > 1 && (
+          <div className="pagination">
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index + 1}
+                onClick={() => paginate(index + 1)}
+                className={`pagination-btn ${currentPage === index + 1 ? 'active' : ''}`}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       
       <div className="admin-section">
@@ -283,6 +388,15 @@ const Admin = () => {
         <Link to="/" className="btn back-btn">
           返回首页
         </Link>
+        <button 
+          className="btn logout-btn"
+          onClick={() => {
+            localStorage.removeItem('adminLoggedIn');
+            navigate('/admin-login');
+          }}
+        >
+          登出
+        </button>
       </div>
     </div>
   );

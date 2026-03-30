@@ -6,7 +6,8 @@ const ClientRequest = () => {
     type: 'PPT设计',
     budget: '',
     pages: '',
-    style: ''
+    style: '',
+    otherType: ''
   });
   const [submitted, setSubmitted] = useState(false);
 
@@ -18,12 +19,21 @@ const ClientRequest = () => {
     }));
   };
 
+  // 生成随机订单编号
+  const generateOrderNumber = () => {
+    const prefix = 'ORD';
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const random = Math.floor(1000 + Math.random() * 9000);
+    return `${prefix}${date}${random}`;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     // 模拟提交，将需求保存到本地存储
     const newRequest = {
       id: Date.now(),
-      type: formData.type,
+      orderNumber: generateOrderNumber(),
+      type: formData.type === '其他需求' ? formData.otherType : formData.type,
       budget: formData.budget,
       pages: formData.pages,
       style: formData.style,
@@ -78,6 +88,7 @@ const ClientRequest = () => {
             <option value="海报设计">海报设计</option>
             <option value="广告设计">广告设计</option>
             <option value="视频剪辑">视频剪辑</option>
+            <option value="其他需求">其他需求</option>
           </select>
         </div>
         
@@ -92,6 +103,21 @@ const ClientRequest = () => {
             required
           />
         </div>
+        
+        {formData.type === '其他需求' && (
+          <div className="form-group">
+            <label>具体需求描述</label>
+            <input 
+              type="text" 
+              name="otherType" 
+              value={formData.otherType} 
+              onChange={handleChange}
+              className="form-control"
+              placeholder="请详细描述您的需求类型"
+              required
+            />
+          </div>
+        )}
         
         {formData.type === 'PPT设计' && (
           <div className="form-group">
@@ -122,6 +148,9 @@ const ClientRequest = () => {
         <button type="submit" className="btn submit-btn">
           提交需求
         </button>
+        <Link to="/" className="btn back-btn" style={{ marginTop: '15px', display: 'block', textAlign: 'center' }}>
+          返回首页
+        </Link>
       </form>
     </div>
   );

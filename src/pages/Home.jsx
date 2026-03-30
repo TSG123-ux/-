@@ -35,7 +35,7 @@ const Home = () => {
       const currentYear = now.getFullYear();
       const monthlyRequests = requests.filter(r => {
         const reqDate = new Date(r.createdAt);
-        return reqDate.getMonth() === currentMonth && reqDate.getFullYear() === currentYear;
+        return reqDate.getMonth() === currentMonth && reqDate.getFullYear() === currentYear && r.status === '已完成';
       });
       const monthlyAmount = monthlyRequests.reduce((sum, req) => sum + (req.budget || 0), 0);
 
@@ -65,6 +65,18 @@ const Home = () => {
       <div className="home-header">
         <h1 className="home-title">无界设计：创意管理系统</h1>
         <p className="home-subtitle">为创意破壁，让价值无界</p>
+      </div>
+      
+      <div className="home-services">
+        <div className="service-card">
+          <h3>高端设计</h3>
+        </div>
+        <div className="service-card">
+          <h3>个性定制</h3>
+        </div>
+        <div className="service-card">
+          <h3>多维服务</h3>
+        </div>
       </div>
       
       <div className="home-features">

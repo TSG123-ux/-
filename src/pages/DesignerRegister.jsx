@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const DesignerRegister = () => {
@@ -11,6 +11,19 @@ const DesignerRegister = () => {
     files: []
   });
   const [submitted, setSubmitted] = useState(false);
+  const [captcha, setCaptcha] = useState('');
+  const [userCaptcha, setUserCaptcha] = useState('');
+
+  // 生成随机验证码
+  const generateCaptcha = () => {
+    const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+    setCaptcha(randomCode);
+  };
+
+  // 组件加载时生成验证码
+  useEffect(() => {
+    generateCaptcha();
+  }, []);
 
   // 可选技能标签
   const availableSkills = [
@@ -64,6 +77,25 @@ const DesignerRegister = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // 检查账号长度
+    if (formData.username.length < 6) {
+      setError('账号长度不能少于6个字符');
+      return;
+    }
+    
+    // 检查密码长度
+    if (formData.password.length < 6) {
+      setError('密码长度不能少于6个字符');
+      return;
+    }
+    
+    // 验证验证码
+    if (userCaptcha !== captcha) {
+      setError('验证码错误，请重新输入');
+      generateCaptcha(); // 重新生成验证码
+      return;
+    }
+    
     // 检查名字是否已存在
     const existingDesigners = JSON.parse(localStorage.getItem('designers') || '[]');
     const nameExists = existingDesigners.some(designer => designer.name === formData.name);
@@ -73,9 +105,13 @@ const DesignerRegister = () => {
       return;
     }
     
+    // 生成工号：DES + 三位数字序号
+    const employeeId = `DES${String(existingDesigners.length + 1).padStart(3, '0')}`;
+    
     // 模拟提交，将设计师信息添加到本地存储
     const newDesigner = {
       id: Date.now(),
+      employeeId: employeeId,
       name: formData.name,
       username: formData.username,
       password: formData.password,
@@ -147,6 +183,42 @@ const DesignerRegister = () => {
             className="form-control"
             required
           />
+        </div>
+        
+        <div className="form-group">
+          <label>验证码</label>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input
+              type="text"
+              value={userCaptcha}
+              onChange={(e) => setUserCaptcha(e.target.value)}
+              required
+              className="form-control"
+              style={{ flex: 1 }}
+              placeholder="请输入验证码"
+            />
+            <div 
+              style={{ 
+                background: '#f0f0f0', 
+                padding: '10px', 
+                borderRadius: '4px', 
+                fontSize: '18px', 
+                fontWeight: 'bold', 
+                letterSpacing: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: '100px',
+                cursor: 'pointer'
+              }}
+              onClick={generateCaptcha}
+            >
+              {captcha}
+            </div>
+          </div>
+          <small style={{ display: 'block', marginTop: '5px', fontSize: '12px', color: '#666' }}>
+            点击验证码可刷新
+          </small>
         </div>
         
         <div className="form-group">
