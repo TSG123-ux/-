@@ -10,10 +10,12 @@ const Home = () => {
     { label: '未完订单量', value: 0 },
     { label: '本月累计成交金额', value: '¥0' }
   ]);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
-    // 清除本地存储中的所有数据（仅用于演示）
-    // localStorage.clear();
+    // 清除本地存储中的所有数据
+    localStorage.clear();
+    console.log('数据已清零！');
 
     // 从本地存储读取实际数据
     const updateStats = () => {
@@ -37,7 +39,7 @@ const Home = () => {
         const reqDate = new Date(r.createdAt);
         return reqDate.getMonth() === currentMonth && reqDate.getFullYear() === currentYear && r.status === '已完成';
       });
-      const monthlyAmount = monthlyRequests.reduce((sum, req) => sum + (req.budget || 0), 0);
+      const monthlyAmount = monthlyRequests.reduce((sum, req) => sum + Number(req.budget || 0), 0);
 
       // 更新统计数据
       setStats([
@@ -48,6 +50,18 @@ const Home = () => {
         { label: '未完订单量', value: pendingRequests.length },
         { label: '本月累计成交金额', value: `¥${monthlyAmount.toLocaleString()}` }
       ]);
+
+      // 加载评价数据
+      const reviewsData = requests
+        .filter(req => req.review)
+        .map(req => ({
+          id: req.id,
+          type: req.type,
+          rating: req.review.rating,
+          comment: req.review.comment,
+          createdAt: req.review.createdAt
+        }));
+      setReviews(reviewsData);
     };
 
     updateStats();
@@ -124,6 +138,26 @@ const Home = () => {
         <Link to="/platform-register" className="btn client-btn">
           我是平台（申请合作）
         </Link>
+      </div>
+      
+      <div className="home-reviews">
+        <h3>客户评价</h3>
+        <div className="reviews-container">
+          {reviews.length > 0 ? (
+            reviews.map((review, index) => (
+              <div key={index} className="review-card">
+                <div className="review-rating">
+                  {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                </div>
+                <div className="review-comment">{review.comment}</div>
+                <div className="review-order">订单类型：{review.type}</div>
+                <div className="review-date">{new Date(review.createdAt).toLocaleString()}</div>
+              </div>
+            ))
+          ) : (
+            <div className="no-reviews">暂无评价</div>
+          )}
+        </div>
       </div>
       
       <div className="home-developer">
