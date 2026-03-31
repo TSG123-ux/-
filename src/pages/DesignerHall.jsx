@@ -26,14 +26,34 @@ const DesignerHall = () => {
     }
     setIsApproved(true);
 
-    // 从本地存储加载需求数据
-    const savedRequests = localStorage.getItem('requests');
-    if (savedRequests) {
-      const parsedRequests = JSON.parse(savedRequests);
-      // 显示所有待派单的需求（派单后所有设计师都能看到）
-      const pendingRequests = parsedRequests.filter(req => req.status === '待派单');
-      setRequests(pendingRequests);
-    }
+    // 加载需求数据的函数
+    const loadRequests = () => {
+      const savedRequests = localStorage.getItem('requests');
+      if (savedRequests) {
+        const parsedRequests = JSON.parse(savedRequests);
+        // 显示所有待派单的需求
+        const pendingRequests = parsedRequests.filter(req => req.status === '待派单');
+        setRequests(pendingRequests);
+      }
+    };
+
+    // 初始加载
+    loadRequests();
+
+    // 监听本地存储变化，实现实时同步
+    const handleStorageChange = () => {
+      loadRequests();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // 定时轮询检查更新（每2秒）
+    const interval = setInterval(loadRequests, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, [navigate]);
 
   const handleAccept = (id) => {
@@ -128,6 +148,12 @@ const DesignerHall = () => {
           ))}
         </div>
       )}
+      
+      <div className="hall-actions">
+        <Link to="/" className="btn back-btn">
+          返回首页
+        </Link>
+      </div>
     </div>
   );
 };

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ClientRequest = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     type: 'PPT设计',
     budget: '',
@@ -10,6 +11,20 @@ const ClientRequest = () => {
     otherType: ''
   });
   const [submitted, setSubmitted] = useState(false);
+
+  // 检查登录状态
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('clientLoggedIn');
+    const expiryTime = localStorage.getItem('clientLoginExpiry');
+    
+    if (!isLoggedIn || !expiryTime || new Date() > new Date(expiryTime)) {
+      // 如果没有登录或登录已过期，重定向到登录页面
+      localStorage.removeItem('clientLoggedIn');
+      localStorage.removeItem('clientLoginExpiry');
+      localStorage.removeItem('clientUsername');
+      navigate('/client-login');
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,6 +44,8 @@ const ClientRequest = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // 获取客户登录信息
+    const clientUsername = localStorage.getItem('clientUsername');
     // 模拟提交，将需求保存到本地存储
     const newRequest = {
       id: Date.now(),
@@ -38,6 +55,7 @@ const ClientRequest = () => {
       pages: formData.pages,
       style: formData.style,
       status: '待派单',
+      clientUsername: clientUsername || '匿名客户',
       createdAt: new Date().toISOString()
     };
     

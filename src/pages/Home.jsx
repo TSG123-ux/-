@@ -8,15 +8,11 @@ const Home = () => {
     { label: '合作平台数', value: 0 },
     { label: '客户满意度', value: '0%' },
     { label: '未完订单量', value: 0 },
-    { label: '本月累计成交金额', value: '¥0' }
+    { label: '本月累计成交金额（元）', value: '¥0' }
   ]);
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
-    // 清除本地存储中的所有数据
-    localStorage.clear();
-    console.log('数据已清零！');
-
     // 从本地存储读取实际数据
     const updateStats = () => {
       // 读取设计师数据
@@ -25,7 +21,7 @@ const Home = () => {
 
       // 读取需求数据
       const requests = JSON.parse(localStorage.getItem('requests') || '[]');
-      const pendingRequests = requests.filter(r => r.status === '待派单');
+      const pendingRequests = requests.filter(r => r.status === '待派单' || r.status === '已接单');
 
       // 读取平台数据
       const platforms = JSON.parse(localStorage.getItem('platforms') || '[]');
@@ -41,14 +37,26 @@ const Home = () => {
       });
       const monthlyAmount = monthlyRequests.reduce((sum, req) => sum + Number(req.budget || 0), 0);
 
+      // 计算客户满意度（基于客户评价）
+      const reviewedRequests = requests.filter(req => req.review);
+      let satisfactionRate = '0%';
+      if (reviewedRequests.length > 0) {
+        const totalRating = reviewedRequests.reduce((sum, req) => sum + req.review.rating, 0);
+        const averageRating = totalRating / reviewedRequests.length;
+        // 将5星制转换为百分比
+        satisfactionRate = `${Math.round((averageRating / 5) * 100)}%`;
+      } else {
+        satisfactionRate = '0%';
+      }
+
       // 更新统计数据
       setStats([
         { label: '设计师总人数', value: approvedDesigners.length },
         { label: '累计订单数', value: requests.length },
         { label: '合作平台数', value: approvedPlatforms.length },
-        { label: '客户满意度', value: '98%' }, // 暂时使用固定值
+        { label: '客户满意度', value: satisfactionRate },
         { label: '未完订单量', value: pendingRequests.length },
-        { label: '本月累计成交金额', value: `¥${monthlyAmount.toLocaleString()}` }
+        { label: '本月累计成交金额（元）', value: `${monthlyAmount.toLocaleString()}元` }
       ]);
 
       // 加载评价数据
@@ -126,7 +134,7 @@ const Home = () => {
       </div>
       
       <div className="home-buttons">
-        <Link to="/client-request" className="btn client-btn">
+        <Link to="/client-login" className="btn client-btn">
           我是客户（发布需求）
         </Link>
         <Link to="/designer-list" className="btn client-btn">

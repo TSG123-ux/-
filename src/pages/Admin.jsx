@@ -35,6 +35,51 @@ const Admin = () => {
     return [];
   });
 
+  // 实时同步数据
+  useEffect(() => {
+    const syncData = () => {
+      // 同步设计师数据
+      const savedDesigners = localStorage.getItem('designers');
+      if (savedDesigners) {
+        setDesigners(JSON.parse(savedDesigners));
+      }
+      
+      // 同步需求数据
+      const savedRequests = localStorage.getItem('requests');
+      if (savedRequests) {
+        const parsedRequests = JSON.parse(savedRequests);
+        setRequests(parsedRequests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      }
+      
+      // 同步平台数据
+      const savedPlatforms = localStorage.getItem('platforms');
+      if (savedPlatforms) {
+        setPlatforms(JSON.parse(savedPlatforms));
+      }
+      
+      // 同步客户数据
+      const savedClients = localStorage.getItem('clients');
+      if (savedClients) {
+        setClients(JSON.parse(savedClients));
+      }
+    };
+
+    // 监听本地存储变化
+    const handleStorageChange = () => {
+      syncData();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // 定时轮询检查更新（每2秒）
+    const interval = setInterval(syncData, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   // 从本地存储读取平台数据
   const [platforms, setPlatforms] = useState(() => {
     const savedPlatforms = localStorage.getItem('platforms');
@@ -56,6 +101,16 @@ const Admin = () => {
   });
 
   const [newShop, setNewShop] = useState('');
+
+  // 从本地存储读取客户数据
+  const [clients, setClients] = useState(() => {
+    const savedClients = localStorage.getItem('clients');
+    if (savedClients) {
+      return JSON.parse(savedClients);
+    }
+    // 初始为空数组
+    return [];
+  });
 
   // 订单对接管理相关状态
   const [searchTerm, setSearchTerm] = useState('');
@@ -124,6 +179,24 @@ const Admin = () => {
     setShops(updatedShops);
     // 保存到本地存储
     localStorage.setItem('shops', JSON.stringify(updatedShops));
+  };
+
+  // 删除客户
+  const handleDeleteClient = (username) => {
+    const updatedClients = clients.filter(client => client.username !== username);
+    setClients(updatedClients);
+    // 保存到本地存储
+    localStorage.setItem('clients', JSON.stringify(updatedClients));
+  };
+
+  // 处理退款申请
+  const handleRefundRequest = (id, status) => {
+    const updatedRequests = requests.map(req => 
+      req.id === id ? { ...req, refundStatus: status } : req
+    );
+    setRequests(updatedRequests);
+    // 保存到本地存储
+    localStorage.setItem('requests', JSON.stringify(updatedRequests));
   };
 
   // 计算每个设计师的订单数量
@@ -379,6 +452,100 @@ const Admin = () => {
             添加店铺
           </button>
         </form>
+      </div>
+
+      <div className="admin-section">
+        <h3>客户管理</h3>
+        <div className="admin-table">
+          <table>
+            <thead>
+              <tr>
+                <th>账号</th>
+                <th>手机号码</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.length > 0 ? (
+                clients.map(client => (
+                  <tr key={client.username}>
+                    <td>{client.username}</td>
+                    <td>{client.phone || '未设置'}</td>
+                    <td>
+                      <button 
+                        className="btn small-btn delete-btn"
+                        onClick={() => handleDeleteClient(client.username)}
+                      >
+                        删除
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="3" className="no-orders">
+                    暂无客户数据
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="admin-section">
+        <h3>退款管理</h3>
+        <div className="admin-table">
+          <table>
+            <thead>
+              <tr>
+                <th>订单ID</th>
+                <th>订单类型</th>
+                <th>金额</th>
+                <th>退款原因</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.filter(req => req.refunded).length > 0 ? (
+                requests.filter(req => req.refunded).map(req => (
+                  <tr key={req.id}>
+                    <td>{req.id}</td>
+                    <td>{req.type}</td>
+                    <td>¥{req.budget}</td>
+                    <td>{req.refundReason || '未填写'}</td>
+                    <td>{req.refundStatus || '待处理'}</td>
+                    <td>
+                      {!req.refundStatus && (
+                        <>
+                          <button 
+                            className="btn small-btn approve-btn"
+                            onClick={() => handleRefundRequest(req.id, '已同意')}
+                          >
+                            同意
+                          </button>
+                          <button 
+                            className="btn small-btn reject-btn"
+                            onClick={() => handleRefundRequest(req.id, '已拒绝')}
+                          >
+                            拒绝
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="no-orders">
+                    暂无退款申请
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       
       <div className="admin-actions">

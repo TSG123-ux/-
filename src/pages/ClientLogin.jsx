@@ -4,9 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 const ClientLogin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [captcha, setCaptcha] = useState('');
   const [userCaptcha, setUserCaptcha] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   // 生成随机验证码
@@ -45,18 +47,39 @@ const ClientLogin = () => {
     // 客户账号密码验证
     // 这里可以根据实际需求修改验证逻辑
     // 暂时使用简单的验证，实际项目中应该从后端验证
-    if (username && password) {
+    if (username && password && phone) {
+      // 验证手机号码格式
+      const phoneRegex = /^1[3-9]\d{9}$/;
+      if (!phoneRegex.test(phone)) {
+        setError('请输入正确的手机号码');
+        return;
+      }
       // 保存登录状态到本地存储
       localStorage.setItem('clientLoggedIn', 'true');
       localStorage.setItem('clientUsername', username);
+      localStorage.setItem('clientPhone', phone);
       // 设置登录过期时间（24小时）
       const expirationTime = new Date();
       expirationTime.setHours(expirationTime.getHours() + 24);
       localStorage.setItem('clientLoginExpiry', expirationTime.toISOString());
-      // 跳转到客户订单管理页面
-      navigate('/client-dashboard');
+      
+      // 保存客户信息到clients数组
+      const existingClients = JSON.parse(localStorage.getItem('clients') || '[]');
+      const clientExists = existingClients.some(client => client.username === username);
+      if (!clientExists) {
+        const newClient = {
+          username: username,
+          phone: phone,
+          createdAt: new Date().toISOString()
+        };
+        existingClients.push(newClient);
+        localStorage.setItem('clients', JSON.stringify(existingClients));
+      }
+      
+      // 跳转到发布需求页面
+      navigate('/client-request');
     } else {
-      setError('请输入账号和密码');
+      setError('请输入账号、手机号码和密码');
     }
   };
 
@@ -77,15 +100,48 @@ const ClientLogin = () => {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">密码</label>
+            <label htmlFor="phone">手机号码</label>
             <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="tel"
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               required
               className="form-control"
+              pattern="1[3-9]\d{9}"
+              placeholder="请输入11位手机号码"
             />
+          </div>
+          <div className="form-group">
+            <label htmlFor="password">密码</label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="form-control"
+                style={{ paddingRight: '40px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#00d4ff',
+                  cursor: 'pointer',
+                  fontSize: '16px'
+                }}
+              >
+                {showPassword ? '👁️' : '👁️‍🗨️'}
+              </button>
+            </div>
           </div>
           <div className="form-group">
             <label htmlFor="captcha">验证码</label>

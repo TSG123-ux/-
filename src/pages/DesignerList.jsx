@@ -6,7 +6,7 @@ const DesignerList = () => {
   const [selectedDesigner, setSelectedDesigner] = useState(null);
 
   // 从本地存储加载设计师数据
-  useEffect(() => {
+  const loadDesigners = () => {
     const savedDesigners = localStorage.getItem('designers');
     if (savedDesigners) {
       const parsedDesigners = JSON.parse(savedDesigners);
@@ -14,6 +14,26 @@ const DesignerList = () => {
       const approvedDesigners = parsedDesigners.filter(designer => designer.status === '已通过');
       setDesigners(approvedDesigners);
     }
+  };
+
+  useEffect(() => {
+    // 初始加载
+    loadDesigners();
+
+    // 监听本地存储变化，实现实时同步
+    const handleStorageChange = () => {
+      loadDesigners();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // 定时轮询检查更新（每2秒）
+    const interval = setInterval(loadDesigners, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleSelectDesigner = (designer) => {
